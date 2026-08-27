@@ -1,5 +1,6 @@
 import { Fraunces, IBM_Plex_Sans } from "next/font/google";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import AuthCodeCleanup from "@/components/AuthCodeCleanup";
 import "./globals.css";
 
 const display = Fraunces({
@@ -37,6 +38,7 @@ export default function RootLayout({ children }) {
       <body>
         {children}
         <ServiceWorkerRegister />
+        <AuthCodeCleanup />
       </body>
     </html>
   );
