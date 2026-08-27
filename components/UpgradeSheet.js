@@ -9,7 +9,7 @@ const PERKS = [
   "Guided voice sessions and full history",
 ];
 
-export default function UpgradeSheet({ reason, onClose, onUpgrade }) {
+export default function UpgradeSheet({ reason, onClose, onUpgrade, checkingOut }) {
   const open = reason !== null;
   const cta = useRef(null);
   const returnTo = useRef(null);
@@ -55,14 +55,19 @@ export default function UpgradeSheet({ reason, onClose, onUpgrade }) {
           ))}
         </ul>
         <div className="sheet-actions">
-          <button ref={cta} className="btn btn-primary" onClick={onUpgrade} tabIndex={open ? 0 : -1}>
-            Start 7-day free trial
+          <button
+            ref={cta}
+            className="btn btn-primary"
+            onClick={onUpgrade}
+            disabled={checkingOut}
+            tabIndex={open ? 0 : -1}
+          >
+            {checkingOut ? "Redirecting…" : "Start 7-day free trial"}
           </button>
           <button className="btn btn-quiet" onClick={onClose} tabIndex={open ? 0 : -1}>
             Not now
           </button>
         </div>
-        <p className="stub-note">Checkout not wired yet — this is where Stripe goes.</p>
       </div>
     </>
   );

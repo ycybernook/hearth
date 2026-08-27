@@ -1,19 +1,27 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Orb from "./Orb";
 import Settings from "./Settings";
 import UpgradeSheet from "./UpgradeSheet";
+import MoodPicker from "./MoodPicker";
 import { PATTERNS, getPattern } from "@/lib/patterns";
 import { useBreathEngine, fmtClock } from "@/lib/useBreathEngine";
 import { useEntitlement } from "@/lib/entitlement";
 import { unlockAudio, tone, buzz } from "@/lib/audio";
+import { logSession, setMoodAfter, getStreak } from "@/lib/sessions";
+import { createClient } from "@/lib/supabase/client";
 
-export default function HearthApp() {
+export default function HearthApp({ user }) {
   const [pattern, setPattern] = useState(PATTERNS[0]);
   const [minutes, setMinutes] = useState(3);
   const [sound, setSound] = useState(true);
   const [haptics, setHaptics] = useState(true);
+  const [moodBefore, setMoodBefore] = useState(null);
+  const [moodAfter, setMoodAfter_] = useState(null);
+  const [streak, setStreak] = useState(0);
+
+  const sessionIdRef = useRef(null);
 
   const refs = {
     swell: useRef(null),
@@ -24,10 +32,37 @@ export default function HearthApp() {
   };
 
   const engine = useBreathEngine(refs, { sound, haptics });
-  const { isPro, gate, requirePro, closeGate, startCheckout } = useEntitlement();
+  const { isPro, gate, requirePro, closeGate, startCheckout, checkingOut } = useEntitlement(user);
 
   const summary = useMemo(() => `${pattern.name} · ${minutes} min`, [pattern, minutes]);
   const idle = !engine.running && !engine.result;
+
+  const refreshStreak = useCallback(() => {
+    if (user) getStreak(user.id).then(setStreak);
+  }, [user]);
+
+  useEffect(() => {
+    refreshStreak();
+  }, [refreshStreak]);
+
+  // Log the round the moment it finishes, then let the mood-after pick
+  // update that same row — the session is never lost if they walk away.
+  useEffect(() => {
+    if (!engine.result) return;
+    sessionIdRef.current = null;
+    setMoodAfter_(null);
+    logSession({
+      userId: user?.id,
+      patternId: pattern.id,
+      minutes: engine.result.minutes,
+      breaths: engine.result.breaths,
+      moodBefore,
+    }).then((id) => {
+      sessionIdRef.current = id;
+      if (id) refreshStreak();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [engine.result]);
 
   const pickPattern = useCallback(
     (p) => {
@@ -62,13 +97,45 @@ export default function HearthApp() {
     engine.start(sigh, 60);
   }, [engine]);
 
+  const onMoodAfter = useCallback((level) => {
+    setMoodAfter_(level);
+    setMoodAfter(sessionIdRef.current, level);
+  }, []);
+
+  const onBackToStart = useCallback(() => {
+    setMoodBefore(null);
+    engine.stop();
+  }, [engine]);
+
+  const onSignOut = useCallback(async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/";
+  }, []);
+
   return (
     <div className="app">
       <header className="masthead">
         <h1 className="wordmark">
           Hearth<em>.</em>
         </h1>
-        <span className="status">{engine.running ? "In session" : "Resting"}</span>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "var(--s2)" }}>
+          {user && streak > 0 && (
+            <span className="status" title="Current streak">
+              🔥 {streak}d
+            </span>
+          )}
+          <span className="status">{engine.running ? "In session" : "Resting"}</span>
+          {user ? (
+            <button className="toggle" onClick={onSignOut} style={{ padding: "4px 10px" }}>
+              Sign out
+            </button>
+          ) : (
+            <a className="toggle" href="/login" style={{ padding: "4px 10px", textDecoration: "none" }}>
+              Sign in
+            </a>
+          )}
+        </div>
       </header>
 
       <main className="stage">
@@ -116,38 +183,48 @@ export default function HearthApp() {
                 <span className="stat-lbl">Minutes</span>
               </div>
             </div>
-            <button className="btn" onClick={engine.stop} autoFocus>
+            {user && (
+              <MoodPicker label="How do you feel now?" value={moodAfter} onPick={onMoodAfter} />
+            )}
+            <button className="btn" onClick={onBackToStart} autoFocus>
               Back to start
             </button>
           </div>
         </section>
       ) : (
         idle && (
-          <Settings
-            isPro={isPro}
-            patternId={pattern.id}
-            minutes={minutes}
-            sound={sound}
-            haptics={haptics}
-            onPickPattern={pickPattern}
-            onPickLength={pickLength}
-            onToggleSound={() => {
-              setSound((s) => {
-                if (!s) tone(528, 0.3);
-                return !s;
-              });
-            }}
-            onToggleHaptics={() => {
-              setHaptics((h) => {
-                if (!h) buzz(30);
-                return !h;
-              });
-            }}
-          />
+          <>
+            {user && (
+              <section className="panel" aria-label="Mood check-in">
+                <MoodPicker label="How do you feel right now?" value={moodBefore} onPick={setMoodBefore} />
+              </section>
+            )}
+            <Settings
+              isPro={isPro}
+              patternId={pattern.id}
+              minutes={minutes}
+              sound={sound}
+              haptics={haptics}
+              onPickPattern={pickPattern}
+              onPickLength={pickLength}
+              onToggleSound={() => {
+                setSound((s) => {
+                  if (!s) tone(528, 0.3);
+                  return !s;
+                });
+              }}
+              onToggleHaptics={() => {
+                setHaptics((h) => {
+                  if (!h) buzz(30);
+                  return !h;
+                });
+              }}
+            />
+          </>
         )
       )}
 
-      <UpgradeSheet reason={gate} onClose={closeGate} onUpgrade={startCheckout} />
+      <UpgradeSheet reason={gate} onClose={closeGate} onUpgrade={startCheckout} checkingOut={checkingOut} />
     </div>
   );
 }

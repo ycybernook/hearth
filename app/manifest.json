@@ -1,0 +1,13 @@
+{
+  "name": "Hearth — breathe",
+  "short_name": "Hearth",
+  "description": "Heart centered breathwork, and five more practices. One tap, no menus.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12100f",
+  "theme_color": "#12100f",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
