@@ -10,6 +10,7 @@ import { useBreathEngine, fmtClock } from "@/lib/useBreathEngine";
 import { useEntitlement } from "@/lib/entitlement";
 import { unlockAudio, tone, buzz } from "@/lib/audio";
 import { logSession, setMoodAfter, getStreak } from "@/lib/sessions";
+import { getCoachAudioUrl } from "@/lib/coachAudio";
 import { createClient } from "@/lib/supabase/client";
 
 export default function HearthApp({ user }) {
@@ -31,10 +32,14 @@ export default function HearthApp({ user }) {
     elapsed: useRef(null),
   };
 
-  const engine = useBreathEngine(refs, { sound, haptics });
+  const coachAudioUrl = useMemo(() => getCoachAudioUrl(pattern.id, minutes), [pattern.id, minutes]);
+  const engine = useBreathEngine(refs, { sound, haptics, coachAudioUrl });
   const { isPro, gate, requirePro, closeGate, startCheckout, checkingOut } = useEntitlement(user);
 
-  const summary = useMemo(() => `${pattern.name} · ${minutes} min`, [pattern, minutes]);
+  const summary = useMemo(
+    () => `${pattern.name} · ${minutes} min${coachAudioUrl ? " · Guided" : ""}`,
+    [pattern, minutes, coachAudioUrl]
+  );
   const idle = !engine.running && !engine.result;
 
   const refreshStreak = useCallback(() => {

@@ -54,7 +54,8 @@ components/
 lib/
   patterns.js          practice data — edit this, not the engine
   useBreathEngine.js    the rAF loop
-  audio.js             synthesised cues and haptics (no recordings yet — see below)
+  audio.js             synthesised cues and haptics (default, most practices)
+  coachAudio.js         maps pattern+length to a recorded guided session, if one exists
   entitlement.js        real Pro gate: reads hearth_subscriptions, drives checkout
   sessions.js           logs rounds to hearth_sessions, reads the streak
   stripe.js             server-only Stripe client
@@ -63,8 +64,10 @@ lib/
   supabase/admin.js      service-role client — webhook only, bypasses RLS
 proxy.js                refreshes the Supabase session cookie on every request
 public/
-  sw.js                 cache-first service worker for the app shell
+  sw.js                 service worker — network-first for the page, cache-first for hashed assets
   icon.svg              app icon (used for the PWA manifest and favicon)
+  audio/heart-5.mp3      recorded Heart-centered guided session, 5 min
+  audio/heart-10.mp3     recorded Heart-centered guided session, 10 min (Pro length)
 ```
 
 **The engine writes to DOM refs, not state.** A 60fps `setState` would re-render
@@ -118,12 +121,16 @@ consecutive practice days; `HearthApp` shows it in the header once it's > 0.
 again on the finish card) writes `mood_before`/`mood_after` on the session row.
 Skippable either side — nothing blocks on it.
 
-**Coach audio — not done.** `lib/audio.js` still synthesises tones; recorded
-lines for the `heart` pattern's prompts were planned but the TTS account had
-no generation credits left when this was built. `playCue()`/`playChime()` are
-the seam — swap them for an `AudioBufferSourceNode` player once clips exist,
-preloading one phase ahead, matched one-to-one against each pattern's
-`prompts` array.
+**Coach audio.** `lib/coachAudio.js` maps `${patternId}-${minutes}` to a full
+recorded guided session under `public/audio/`. Right now that's just the
+Heart-centered practice at 5 and 10 minutes (`heart-5.mp3`, `heart-10.mp3`).
+When a match exists, `useBreathEngine` plays it on `start()` instead of the
+synthesised phase tones (haptics and the on-screen prompt captions still run
+as normal) and stops it on completion, `stop()`, or unmount. The written
+`prompts` stay on screen as captions either way. Per-phase synthesized tones
+via `playCue()`/`playChime()` in `lib/audio.js` are still what plays for every
+other practice/length combination — that per-line TTS approach is unbuilt
+since the TTS account had no generation credits left when this was built.
 
 **PWA.** `app/manifest.json` + `public/sw.js` (hand-rolled, cache-first for the
 app shell) registered from `ServiceWorkerRegister`. `public/icon.svg` is a
@@ -132,7 +139,8 @@ sizes if you need broader OS icon support.
 
 ## Known limits
 
-- Coach audio is still synthesized tones, not recordings (see above).
+- Coach audio is recorded only for Heart-centered at 5/10 min; every other
+  practice and length still uses synthesized tones (see above).
 - Signed-out use is fully functional but doesn't persist — no account, no
   history, no streak.
 - Screen wake lock only works on HTTPS and in browsers that support it. Failure
