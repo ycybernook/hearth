@@ -30,7 +30,7 @@ body {
 }
 
 body {
-  background: radial-gradient(130% 68% at 50% 4%, #2a2320 0%, var(--abyss) 62%), var(--abyss);
+  background: radial-gradient(120% 70% at 50% 100%, #241a14 0%, var(--abyss) 60%), var(--abyss);
   color: var(--sand);
   font-family: var(--body);
   font-size: 16px;
@@ -39,7 +39,53 @@ body {
   touch-action: manipulation;
 }
 
+/* ---------- ember background ---------- */
+/* Sparks lifting off dying coals, rendered by <EmberBackground>. Fixed and
+   behind everything; .app is lifted onto its own stacking context so it
+   always paints above it regardless of DOM order. */
+.ember-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ember-bg .spark {
+  position: absolute;
+  bottom: 4%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--ember);
+  box-shadow: 0 0 6px 1px rgba(239, 178, 124, 0.75);
+  opacity: 0;
+  animation: ember-rise linear infinite;
+}
+@keyframes ember-rise {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.85;
+  }
+  90% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-72vh) translateX(var(--drift, 12px));
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ember-bg .spark {
+    display: none;
+  }
+}
+
 .app {
+  position: relative;
+  z-index: 1;
   max-width: 520px;
   margin: 0 auto;
   min-height: 100%;

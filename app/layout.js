@@ -1,6 +1,7 @@
 import { Fraunces, IBM_Plex_Sans } from "next/font/google";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
 import AuthCodeCleanup from "@/components/AuthCodeCleanup";
+import EmberBackground from "@/components/EmberBackground";
 import "./globals.css";
 
 const display = Fraunces({
@@ -36,6 +37,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${display.variable} ${body.variable}`}>
       <body>
+        <EmberBackground />
         {children}
         <ServiceWorkerRegister />
         <AuthCodeCleanup />
