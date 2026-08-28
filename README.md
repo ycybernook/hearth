@@ -67,7 +67,7 @@ public/
   sw.js                 service worker — network-first for the page, cache-first for hashed assets
   icon.svg              app icon (used for the PWA manifest and favicon)
   audio/heart-5.mp3      recorded Heart-centered guided session, 5 min
-  audio/heart-10.mp3     recorded Heart-centered guided session, 10 min (Pro length)
+  audio/heart-10.mp3     recorded Heart-centered guided session, 10 min
 ```
 
 **The engine writes to DOM refs, not state.** A 60fps `setState` would re-render

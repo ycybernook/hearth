@@ -79,7 +79,7 @@ export default function HearthApp({ user }) {
 
   const pickLength = useCallback(
     (l) => {
-      if (!requirePro(l.pro, "Free sessions run up to 5 minutes.")) return;
+      if (!requirePro(l.pro, "Free sessions run up to 10 minutes.")) return;
       setMinutes(l.mins);
     },
     [requirePro]
