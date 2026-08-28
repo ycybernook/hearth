@@ -151,11 +151,14 @@ export default function HearthApp({ user }) {
           accent={engine.accent}
           refs={refs}
           ringCirc={engine.RING_CIRC}
+          caption={coachAudioUrl ? engine.prompt : ""}
         />
 
-        <p className={`prompt${engine.prompt ? " on" : ""}`} role="status" aria-live="polite">
-          {engine.prompt}
-        </p>
+        {!coachAudioUrl && (
+          <p className={`prompt${engine.prompt ? " on" : ""}`} role="status" aria-live="polite">
+            {engine.prompt}
+          </p>
+        )}
 
         <div className="elapsed" ref={refs.elapsed}>
           {fmtClock(minutes * 60)} remaining

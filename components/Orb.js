@@ -3,7 +3,7 @@
 import { forwardRef } from "react";
 
 const Orb = forwardRef(function Orb(
-  { cue, summary, showHeart, accent, refs, ringCirc },
+  { cue, summary, showHeart, accent, refs, ringCirc, caption },
   _ref
 ) {
   return (
@@ -37,6 +37,12 @@ const Orb = forwardRef(function Orb(
         <div className="count" ref={refs.count} aria-hidden="true" />
         <div className="rounds">{summary}</div>
       </div>
+
+      {caption ? (
+        <p className="orb-caption" aria-live="polite">
+          {caption}
+        </p>
+      ) : null}
     </div>
   );
 });
